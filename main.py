@@ -3,14 +3,10 @@ import json
 import requests
 import asyncio
 import datetime
-import io
 import sqlite3
 from datetime import datetime
 from discord.ext import commands
 from discord.utils import get
-from PIL import Image, ImageFont, ImageDraw
-import math
-from math import ceil
 from config import settings
 
 bad_words = []
