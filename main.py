@@ -1,15 +1,84 @@
+from builtins import range
 import discord
 import json
 import requests
 import asyncio
 import datetime
-import sqlite3
+import psycopg2
+from pymysql.cursors import DictCursor
 from datetime import datetime
 from discord.ext import commands
 from discord.utils import get
 from config import settings
 
-bad_words = []
+bad_words = ['6ля', '6лядь', '6лять', 'b3ъeб', 'cock', 'cunt', 'e6aль', 'ebal', 'eblan', 'eбaл', 'eбaть', 'eбyч',
+             'eбать', 'eбёт', 'eблантий', 'fuck', 'fucker', 'fucking', 'xyёв', 'xyй', 'xyя', 'xуе,xуй', 'xую', 'zaeb',
+             'zaebal', 'zaebali', 'zaebat', 'архипиздрит', 'ахуел', 'ахуеть', 'бздение', 'бздеть', 'бздех', 'бздецы',
+             'бздит', 'бздицы', 'бздло', 'бзднуть', 'бздун', 'бздунья', 'бздюха', 'бздюшка', 'бздюшко', 'бля', 'блябу',
+             'блябуду', 'бляд', 'бляди', 'блядина', 'блядище', 'блядки', 'блядовать', 'блядство', 'блядун', 'блядуны',
+             'блядунья', 'блядь', 'блядюга', 'блять', 'вафел', 'вафлёр', 'взъебка', 'взьебка', 'взьебывать', 'въеб',
+             'въебался', 'въебенн', 'въебусь', 'въебывать', 'выблядок', 'выблядыш', 'выеб', 'выебать', 'выебен',
+             'выебнулся', 'выебон', 'выебываться', 'выпердеть', 'высраться', 'выссаться', 'вьебен', 'гавно', 'гавнюк',
+             'гавнючка', 'гамно', 'гандон', 'гнид', 'гнида', 'гниды', 'говенка', 'говенный', 'говешка', 'говназия',
+             'говнецо', 'говнище', 'говно', 'говноед', 'говнолинк', 'говночист', 'говнюк', 'говнюха', 'говнядина',
+             'говняк', 'говняный', 'говнять', 'гондон', 'доебываться', 'долбоеб', 'долбоёб', 'долбоящер', 'дрисня',
+             'дрист', 'дристануть', 'дристать', 'дристун', 'дристуха', 'дрочелло', 'дрочена', 'дрочила', 'дрочилка',
+             'дрочистый', 'дрочить', 'дрочка', 'дрочун', 'е6ал', 'е6ут', 'е', 'тво', 'мать', 'ё', 'тво', 'мать', 'ёбaн',
+             'ебaть', 'ебyч', 'ебал', 'ебало', 'ебальник', 'ебан', 'ебанамать', 'ебанат', 'ебаная', 'ёбаная',
+             'ебанический', 'ебанный', 'ебанныйврот', 'ебаное', 'ебануть', 'ебануться', 'ёбаную', 'ебаный', 'ебанько',
+             'ебарь', 'ебат', 'ёбат', 'ебатория', 'ебать', 'ебать-копать', 'ебаться', 'ебашить', 'ебёна', 'ебет',
+             'ебёт', 'ебец', 'ебик', 'ебин', 'ебись', 'ебическая', 'ебки', 'ебла', 'еблан', 'ебливый', 'еблище', 'ебло',
+             'еблыст', 'ебля', 'ёбн', 'ебнуть', 'ебнуться', 'ебня', 'ебошить', 'ебская', 'ебский', 'ебтвоюмать', 'ебун',
+             'ебут', 'ебуч', 'ебуче', 'ебучее', 'ебучий', 'ебучим', 'ебущ', 'ебырь', 'елда', 'елдак', 'елдачить',
+             'жопа', 'жопу', 'заговнять', 'задрачивать', 'задристать', 'задрота', 'зае6', 'заё6', 'заеб', 'заёб',
+             'заеба', 'заебал', 'заебанец', 'заебастая', 'заебастый', 'заебать', 'заебаться', 'заебашить', 'заебистое',
+             'заёбистое', 'заебистые', 'заёбистые', 'заебистый', 'заёбистый', 'заебись', 'заебошить', 'заебываться',
+             'залуп', 'залупа', 'залупаться', 'залупить', 'залупиться', 'замудохаться', 'запиздячить', 'засерать',
+             'засерун', 'засеря', 'засирать', 'засрун', 'захуячить', 'заябестая', 'злоеб', 'злоебучая', 'злоебучее',
+             'злоебучий', 'ибанамат', 'ибонех', 'изговнять', 'изговняться', 'изъебнуться', 'ипать', 'ипаться', 'ипаццо',
+             'Какдвапальцаобоссать', 'конча', 'курва', 'курвятник', 'лох', 'лошарa', 'лошара', 'лошары', 'лошок',
+             'лярва', 'малафья', 'манда', 'мандавошек', 'мандавошка', 'мандавошки', 'мандей', 'мандень', 'мандеть',
+             'мандища', 'мандой', 'манду', 'мандюк', 'минет', 'минетчик', 'минетчица', 'млять', 'мокрощелка',
+             'мокрощёлка', 'мразь', 'мудak', 'мудaк', 'мудаг', 'мудак', 'муде', 'мудель', 'мудеть', 'муди', 'мудил',
+             'мудила', 'мудистый', 'мудня', 'мудоеб', 'мудозвон', 'мудоклюй', 'н', 'хер', 'н', 'хуй', 'набздел',
+             'набздеть', 'наговнять', 'надристать', 'надрочить', 'наебать', 'наебет', 'наебнуть', 'наебнуться',
+             'наебывать', 'напиздел', 'напиздели', 'напиздело', 'напиздили', 'насрать', 'настопиздить', 'нахер',
+             'нахрен', 'нахуй', 'нахуйник', 'н', 'ебет', 'н', 'ебёт', 'невротебучий', 'невъебенно', 'нехира', 'нехрен',
+             'Нехуй', 'нехуйственно', 'ниибацо', 'ниипацца', 'ниипаццо', 'ниипет', 'никуя', 'нихера', 'нихуя',
+             'обдристаться', 'обосранец', 'обосрать', 'обосцать', 'обосцаться', 'обсирать', 'объебос', 'обьебат',
+             'обьебос', 'однохуйственно', 'опездал', 'опизде', 'опизденивающе', 'остоебенить', 'остопиздеть',
+             'отмудохать', 'отпиздить', 'отпиздячить', 'отпороть', 'отъебись', 'охуевательский', 'охуевать',
+             'охуевающий', 'охуел', 'охуенно', 'охуеньчик', 'охуеть', 'охуительно', 'охуительный', 'охуяньчик',
+             'охуячивать', 'охуячить', 'очкун', 'падла', 'падонки', 'падонок', 'паскуда', 'педерас', 'педик', 'педрик',
+             'педрила', 'педрилло', 'педрило', 'педрилы', 'пездень', 'пездит', 'пездишь', 'пездо', 'пездят',
+             'пердануть', 'пердеж', 'пердение', 'пердеть', 'пердильник', 'перднуть', 'пёрднуть', 'пердун', 'пердунец',
+             'пердунина', 'пердунья', 'пердуха', 'пердь', 'переёбок', 'пернуть', 'пёрнуть', 'пи3д', 'пи3де', 'пи3ду',
+             'пиzдец', 'пидар', 'пидарaс', 'пидарас', 'пидарасы', 'пидары', 'пидор', 'пидорасы', 'пидорка', 'пидорок',
+             'пидоры', 'пидрас', 'пизда', 'пиздануть', 'пиздануться', 'пиздарваньчик', 'пиздато', 'пиздатое',
+             'пиздатый', 'пизденка', 'пизденыш', 'пиздёныш', 'пиздеть', 'пиздец', 'пиздит', 'пиздить', 'пиздиться',
+             'пиздишь', 'пиздища', 'пиздище', 'пиздобол', 'пиздоболы', 'пиздобратия', 'пиздоватая', 'пиздоватый',
+             'пиздолиз', 'пиздонутые', 'пиздорванец', 'пиздорванка', 'пиздострадатель', 'пизду', 'пиздуй', 'пиздун',
+             'пиздунья', 'пизды', 'пиздюга', 'пиздюк', 'пиздюлина', 'пиздюля', 'пиздят', 'пиздячить', 'писбшки',
+             'писька', 'писькострадатель', 'писюн', 'писюшка', 'п', 'хуй', 'п', 'хую', 'подговнять', 'подонки',
+             'подонок', 'подъебнуть', 'подъебнуться', 'поебать', 'поебень', 'поёбываает', 'поскуда', 'посрать',
+             'потаскуха', 'потаскушка', 'похер', 'похерил', 'похерила', 'похерили', 'похеру', 'похрен', 'похрену',
+             'похуй', 'похуист', 'похуистка', 'похую', 'придурок', 'приебаться', 'припиздень', 'припизднутый',
+             'припиздюлина', 'пробзделся', 'проблядь', 'проеб', 'проебанка', 'проебать', 'промандеть', 'промудеть',
+             'пропизделся', 'пропиздеть', 'пропиздячить', 'раздолбай', 'разхуячить', 'разъеб', 'разъеба', 'разъебай',
+             'разъебать', 'распиздай', 'распиздеться', 'распиздяй', 'распиздяйство', 'распроеть', 'сволота', 'сволочь',
+             'сговнять', 'секель', 'серун', 'серька', 'сестроеб', 'сикель', 'сила', 'сирать', 'сирывать', 'соси',
+             'спиздел', 'спиздеть', 'спиздил', 'спиздила', 'спиздили', 'спиздит', 'спиздить', 'срака', 'сраку',
+             'сраный', 'сранье', 'срать', 'срун', 'ссака', 'ссышь', 'стерва', 'страхопиздище', 'сука', 'суки',
+             'суходрочка', 'сучара', 'сучий', 'сучка', 'сучко', 'сучонок', 'сучье', 'сцание', 'сцать', 'сцука', 'сцуки',
+             'сцуконах', 'сцуль', 'сцыха', 'сцышь', 'съебаться', 'сыкун', 'трахае6', 'трахаеб', 'трахаёб', 'трахатель',
+             'ублюдок', 'уебать', 'уёбища', 'уебище', 'уёбище', 'уебищное', 'уёбищное', 'уебк', 'уебки', 'уёбки',
+             'уебок', 'уёбок', 'урюк', 'усраться', 'ушлепок', 'х_у_я_р_а', 'хyё', 'хyй', 'хyйня', 'хамло', 'хер',
+             'херня', 'херовато', 'херовина', 'херовый', 'хитровыебанный', 'хитрожопый', 'хуeм', 'хуе', 'хуё',
+             'хуевато', 'хуёвенький', 'хуевина', 'хуево', 'хуевый', 'хуёвый', 'хуек', 'хуёк', 'хуел', 'хуем', 'хуенч',
+             'хуеныш', 'хуенький', 'хуеплет', 'хуеплёт', 'хуепромышленник', 'хуерик', 'хуерыло', 'хуесос', 'хуесоска',
+             'хуета', 'хуетень', 'хуею', 'хуи', 'хуй', 'хуйком', 'хуйло', 'хуйня', 'хуйрик', 'хуище', 'хуля', 'хую',
+             'хуюл', 'хуя', 'хуяк', 'хуякать', 'хуякнуть', 'хуяра', 'хуясе', 'хуячить', 'целка', 'чмо', 'чмошник',
+             'чмырь', 'шалава', 'шалавой', 'шараёбиться', 'шлюха', 'шлюхой', 'шлюшка','cock','dick','penis','еба','ема','ебалай','пенис','ля','нах']
 botid = f"<@{settings['id']}>"
 SPECIAL_PREFIX = ""
 
@@ -29,44 +98,53 @@ def context_prefix(client, message):
 client = commands.Bot(command_prefix=context_prefix)
 client.remove_command('help')
 
-connection = sqlite3.connect('data.server')
+connection = psycopg2.connect(
+    host='ec2-34-251-118-151.eu-west-1.compute.amazonaws.com',
+    user='nmmdqfjrgykixx',
+    password='ba0c960897eb65cddaeff739205f536657b77ee28afd3a10aaa90886c7891f33',
+    dbname='ddru8hp0ktb4jb'
+)
 cursor = connection.cursor()
 
-connection2 = sqlite3.connect('data.voice_name')
-cursor_voice = connection2.cursor()
+
+def gt(data: str = None, id: int = None):
+    cursor.execute(f"SELECT {data} FROM users WHERE id = {id}")
+    return str(cursor.fetchone()[0])
 
 
 # Ready
 @client.event
 async def on_ready():
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users(
-        name TEXT,
-        id INT,
-        lvl INT,
-        lvlup INT,
-        cash FLOAT,
-        cashm FLOAT,
-        vtime FLOAT,
-        rep INT,
-        warns INT,
-        bans INI,
-        bans_time FLOAT,
-        mute_time FLOAT
-        
-    )""")
-    cursor_voice.execute("""CREATE TABLE IF NOT EXISTS voice_data(
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users(
+    name TEXT,
+    id BIGINT,
+    lvl INT,
+    lvlup INT,
+    cash FLOAT,
+    cashm FLOAT,
+    vtime FLOAT,
+    rep INT,
+    warns INT,
+    bans INT,
+    bans_time FLOAT,
+    mute_time FLOAT
+    )''')
+    cursor.execute("""CREATE TABLE IF NOT EXISTS voice_data(
             c_name TEXT,
-            c_id INT,
+            c_id BIGINT,
             v_name TEXT,
-            v_id INT
+            v_id BIGINT
         )""")
-    if cursor_voice.execute(f"SELECT c_name FROM voice_data").fetchone() is None:
-        cursor_voice.execute(f"INSERT INTO voice_data VALUES ('0',0,'0',0)")
-        connection2.commit()
+    cursor.execute(f"SELECT c_name FROM voice_data")
+    if cursor.fetchone() is None:
+        cursor.execute(f"INSERT INTO voice_data VALUES ('0',0,'0',0)")
+        connection.commit()
     for guild in client.guilds:
         for member in guild.members:
-            if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
-                cursor.execute(f"INSERT INTO users VALUES ('{member}','{member.id}',1,2000,0,10.0,0,0,0,0,0,0)")
+            cursor.execute(f"SELECT id FROM users WHERE id = {member.id}")
+            if cursor.fetchone() is None:
+                cursor.execute(
+                    f"INSERT INTO users VALUES ('{member}',{member.id},1,2000,0,10.0,0,0,0,0,0,0)")
             else:
                 pass
     connection.commit()
@@ -75,14 +153,13 @@ async def on_ready():
 
     for guild in client.guilds:
         for member in guild.members:
-
             # REP 0 AND Create
             rep_0 = discord.utils.get(guild.roles, name='Реп: нейтральный')
             if rep_0 is None:
                 await guild.create_role(name="Реп: нейтральный")
                 rep_0 = discord.utils.get(guild.roles, name='Реп: нейтральный')
-            rep: int = int(
-                f"""{cursor.execute("SELECT rep FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+
+            rep: int = int(gt('rep', member.id))
             if rep == 0 and member.id != settings['id']:
                 await member.add_roles(rep_0)
 
@@ -158,39 +235,29 @@ async def on_ready():
 
             # MUTE
             mute_role = discord.utils.get(guild.roles, name='muted')
-            mute_time: float = float(
-                f"""{cursor.execute("SELECT mute_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+            mute_time: float = float(gt('mute_time', member.id))
             if mute_time > 0:
-                while mute_time != 0:
-                    await asyncio.sleep(1)
-                    cursor.execute("UPDATE users SET mute_time = mute_time - 1 WHERE id = {} ".format(member.id))
-                    connection.commit()
-                    mute_time: float = float(
-                        f"""{cursor.execute("SELECT mute_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
-                    if mute_time == 0:
-                        emb = discord.Embed(title=':loud_sound: Анмут',
-                                            description="Вы были размучены. \n\n"
-                                                        "**Модератор:** {}"
-                                            .format(botid),
-                                            colour=0x1047A9, )
-
-                        await member.send(embed=emb)
-                        await member.remove_roles(mute_role)
-                        emb = None
+                if mute_time > 0:
+                    while mute_time != 0:
+                        await asyncio.sleep(1)
+                        cursor.execute("UPDATE users SET mute_time = mute_time - 1 WHERE id = {} ".format(member.id))
+                        connection.commit()
+                        mute_time: float = float(gt('mute_time', member.id))
+                        if mute_time == 0:
+                            await member.remove_roles(mute_role)
+                            emb = None
+                            return
             # BAN
             ban_role = discord.utils.get(guild.roles, name='ban')
-            bans_time: float = float(
-                f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
-            bans: int = int(
-                f"""{cursor.execute("SELECT bans FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
-            if bans != -1:
+            bans_time: float = float(gt('bans_time', member.id))
+            bans: int = int(gt('bans', member.id))
+            if bans > 0:
                 if bans_time > 0:
                     while bans_time != 0:
                         await asyncio.sleep(1)
                         cursor.execute("UPDATE users SET bans_time = bans_time - 1 WHERE id = {} ".format(member.id))
                         connection.commit()
-                        bans_time: float = float(
-                            f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+                        bans_time: float = float(gt('bans_time', member.id))
                         if bans_time == 0:
                             emb = discord.Embed(title=':white_check_mark: Разбан',
                                                 description="Вы были разбанены.\n\n"
@@ -206,7 +273,8 @@ async def on_ready():
 
 @client.event
 async def on_member_join(member):
-    if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
+    cursor.execute(f"SELECT id FROM users WHERE id = {member.id}")
+    if cursor.fetchone() is None:
         cursor.execute(f"INSERT INTO users VALUES ('{member}','{member.id}', 1, 0, 0, 10.0, 0, 0, 0, 0, 0, 0)")
         connection.commit()
     else:
@@ -217,12 +285,17 @@ async def on_member_join(member):
 @client.event
 async def on_voice_state_update(member, before, after):
     await private_room(member, before, after)
-    if not before.channel and after.channel:
-        while not before.channel and after.channel:
-            await asyncio.sleep(1 * 1)
+    if after.channel:
+        cursor.execute(f"SELECT v_name FROM voice_data")
+        voice_name = str(cursor.fetchone()[0])
+        while after.channel:
+            if before.channel is not None:
+                if str(before.channel) != member.voice.channel:
+                    break
+            await asyncio.sleep(1)
             cursor.execute("UPDATE users SET cash = cash + (cashm/60) WHERE id = {} ".format(member.id))
             cursor.execute("UPDATE users SET vtime = vtime + 1 WHERE id = {} ".format(member.id))
-            vtime = f"""{cursor.execute(f"SELECT vtime FROM users WHERE id = {member.id}").fetchone()[0]}"""
+            vtime = gt('vtime', member.id)
             connection.commit()
             vtime: float = float(vtime) / 3600
             if vtime >= 1 and vtime < 50:
@@ -236,8 +309,10 @@ async def on_voice_state_update(member, before, after):
 
 async def private_room(member, before, after):
     guild = member.guild
-    voice_name = str(cursor_voice.execute(f"SELECT v_name FROM voice_data").fetchone()[0])
-    category_id = int(cursor_voice.execute(f"SELECT c_id FROM voice_data").fetchone()[0])
+    cursor.execute(f"SELECT v_name FROM voice_data")
+    voice_name = str(cursor.fetchone()[0])
+    cursor.execute(f"SELECT c_id FROM voice_data")
+    category_id = int(cursor.fetchone()[0])
     if str(after.channel) == voice_name:
         for guild in client.guilds:
             main_category = discord.utils.get(guild.categories, id=category_id)
@@ -280,11 +355,11 @@ async def private(ctx, name_category: str = None, name_voice: str = None):
     category_private = await guild.create_category_channel(name=f"{name_category}")
     voice_private = await guild.create_voice_channel(name=name_voice, category=category_private)
     await ctx.send(f"{ctx.author.mention}, фуннкция приватов успешно включена.", delete_after=5)
-    cursor_voice.execute("UPDATE voice_data SET c_name = '{}'".format(name_category))
-    cursor_voice.execute("UPDATE voice_data SET c_id = '{}'".format(category_private.id))
-    cursor_voice.execute("UPDATE voice_data SET v_name = '{}'".format(voice_private))
-    cursor_voice.execute("UPDATE voice_data SET v_id = '{}'".format(voice_private.id))
-    connection2.commit()
+    cursor.execute("UPDATE voice_data SET c_name = '{}'".format(name_category))
+    cursor.execute("UPDATE voice_data SET c_id = '{}'".format(category_private.id))
+    cursor.execute("UPDATE voice_data SET v_name = '{}'".format(voice_private))
+    cursor.execute("UPDATE voice_data SET v_id = '{}'".format(voice_private.id))
+    connection.commit()
 
 
 # REPUTATION pre-release
@@ -334,7 +409,7 @@ async def rep_brain(ctx, member, crep: int = None, reason=None):
     rep_1000 = discord.utils.get(ctx.message.guild.roles, name='Реп: 🧠')
 
     last_rep: str = None
-    rep: int = int(f"""{cursor.execute("SELECT rep FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+    rep: int = int(gt('rep', member.id))
     if rep <= -1000:
         last_rep = rep_m1000
     if -100 <= rep <= -51:
@@ -369,7 +444,7 @@ async def rep_brain(ctx, member, crep: int = None, reason=None):
     cursor.execute("UPDATE users SET rep = rep + {} WHERE id = {} ".format(crep, member.id))
     connection.commit()
 
-    rep: int = int(f"""{cursor.execute("SELECT rep FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+    rep: int = int(gt('rep', member.id))
 
     rep_now: str = None
     if rep <= -1000:
@@ -420,17 +495,18 @@ async def stats(ctx):
     emb = discord.Embed(title='Статистика Вашего аккаунта', color=0xf1b958)
     emb.add_field(
         name="Уровень",
-        value=f"""{cursor.execute("SELECT lvl FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}"""
+        value=f"{gt('lvl', ctx.author.id)}"
     )
+
     emb.add_field(
         name="Шестерёнки",
-        value=f"""{cursor.execute("SELECT round(cash,1) FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}"""
+        value=f"{gt('round(cash::numeric, 1)', ctx.author.id)}"
     )
     emb.add_field(
         name="Шестерёнок в минуту",
-        value=f"""{cursor.execute("SELECT cashm FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}"""
+        value=f"{gt('cashm', ctx.author.id)}"
     )
-    vtime = f"""{cursor.execute(f"SELECT vtime FROM users WHERE id = {ctx.author.id}").fetchone()[0]}"""
+    vtime = f"{gt('vtime', ctx.author.id)}"
     vtime: float = float(vtime) / 3600
     emb.add_field(
         name="Время в войсе",
@@ -438,14 +514,13 @@ async def stats(ctx):
     )
     emb.add_field(
         name="Репутация",
-        value=f"""{cursor.execute("SELECT rep FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}"""
+        value=f"{gt('rep', ctx.author.id)}"
     )
     emb.add_field(
         name="Количество варнов",
-        value=f"""{cursor.execute("SELECT warns FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}/3"""
+        value=f"{gt('warns', ctx.author.id)}/3"
     )
-    emb.set_footer(text=f""" 
-        Стоимость {cursor.execute("SELECT (lvl+1) FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]} уровня: {cursor.execute("SELECT lvlup FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+    emb.set_footer(text=f"Стоимость {gt('lvl+1', ctx.author.id)} уровня: {gt('lvlup', ctx.author.id)}")
     await ctx.author.send(embed=emb)
 
 
@@ -453,11 +528,11 @@ async def stats(ctx):
 @client.command()
 async def up(ctx):
     cash: float = float(
-        f"""{cursor.execute("SELECT cash FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+        gt('cash', ctx.author.id))
     lvlup: int = int(
-        f"""{cursor.execute("SELECT lvlup FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+        gt('lvlup', ctx.author.id))
     lvl: int = int(
-        f"""{cursor.execute("SELECT lvl FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+        gt('lvl', ctx.author.id))
 
     if cash >= lvlup:
         cursor.execute("UPDATE users SET lvl = lvl + 1 WHERE id = {} ".format(ctx.author.id))
@@ -466,7 +541,7 @@ async def up(ctx):
         cursor.execute("UPDATE users SET cashm = cashm + 2 WHERE id = {} ".format(ctx.author.id))
         connection.commit()
         cash: float = float(
-            f"""{cursor.execute("SELECT cash FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+            gt('cash', ctx.author.id))
         await ctx.author.send(
             f'Вы успешно приобрели **{lvl + 1} уровень**, теперь шестерёнки будут фармиться ещё быстрее! \n'
             f"С Вас было списано **{lvlup} шестерёнок**  \n"
@@ -556,9 +631,9 @@ async def clear(ctx, arg=''):
 async def warn(ctx, member: discord.Member, *, arg='Не указана'):
     reason = arg
 
-    bans: int = int(f"""{cursor.execute("SELECT bans FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+    bans: int = int(gt('bans', member.id))
     bans_time: float = float(
-        f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+        gt('bans_time', member.id))
     if bans <= 3 and bans_time > 0:
         await ctx.send(f"{member.mention}, уже находится в бане.", delete_after=5)
         return
@@ -570,7 +645,7 @@ async def warn(ctx, member: discord.Member, *, arg='Не указана'):
     connection.commit()
 
     warns: int = int(
-        f"""{cursor.execute("SELECT warns FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+        gt('warns', member.id))
     emb = discord.Embed(title=':name_badge: Варн ``{}/3``'.format(warns),
                         description="{} получил прежупреждение. \n\n"
                                     "**Модератор:** {}"
@@ -591,9 +666,9 @@ async def warn(ctx, member: discord.Member, *, arg='Не указана'):
         connection.commit()
 
         bans_time: float = float(
-            f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+            gt('bans_time', member.id))
         bans: int = int(
-            f"""{cursor.execute("SELECT bans FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+            gt('bans', member.id))
 
         if bans > 3:
             cursor.execute("UPDATE users SET bans_time = -1 WHERE id = {} ".format(member.id))
@@ -631,7 +706,7 @@ async def warn(ctx, member: discord.Member, *, arg='Не указана'):
                 cursor.execute("UPDATE users SET bans_time = bans_time - 1 WHERE id = {} ".format(member.id))
                 connection.commit()
                 bans_time: float = float(
-                    f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+                    gt('bans_time', member.id))
                 if bans_time == 0:
                     cursor.execute("UPDATE users SET warns = 0 WHERE id = {} ".format(member.id))
                     connection.commit()
@@ -646,7 +721,7 @@ async def warn(ctx, member: discord.Member, *, arg='Не указана'):
 @commands.has_permissions(administrator=True)
 async def unwarn(ctx, member: discord.Member):
     warns: int = int(
-        f"""{cursor.execute("SELECT warns FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+        gt('warns', member.id))
     if warns == 0:
         await ctx.send(f"У пользователя {member.mention} и так ``0`` варнов.", delete_after=5)
         return
@@ -661,9 +736,9 @@ async def unwarn(ctx, member: discord.Member):
 @commands.has_permissions(administrator=True)
 async def ban(ctx, member: discord.Member, ban_d: int = None, *, arg='Не указана'):
     bans_time: float = float(
-        f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+        gt('bans_time', member.id))
     if bans_time > 0:
-        await ctx.send(f"{member.mention}, и так находится в бане.", delete_after = 3)
+        await ctx.send(f"{member.mention}, и так находится в бане.", delete_after=3)
         return
 
     reason = arg
@@ -717,8 +792,7 @@ async def ban(ctx, member: discord.Member, ban_d: int = None, *, arg='Не ук�
     cursor.execute("UPDATE users SET bans_time = bans_time + {} WHERE id = {} ".format(ban_d * 86400, member.id))
     connection.commit()
     bans_time: float = float(
-        f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
-    print(bans_time)
+        gt('bans_time', member.id))
     cursor.execute("UPDATE users SET bans = bans + 1 WHERE id = {} ".format(member.id))
     connection.commit()
     if bans_time > 0:
@@ -727,7 +801,7 @@ async def ban(ctx, member: discord.Member, ban_d: int = None, *, arg='Не ук�
             cursor.execute("UPDATE users SET bans_time = bans_time - 1 WHERE id = {} ".format(member.id))
             connection.commit()
             bans_time: float = float(
-                f"""{cursor.execute("SELECT bans_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+                gt('bans_time', member.id))
             if bans_time == 0:
                 emb = discord.Embed(title=':white_check_mark: Разбан',
                                     description="Вы были разбанены.\n\n"
@@ -765,7 +839,7 @@ async def unban(ctx, member: discord.Member):
     ban_role = discord.utils.get(ctx.message.guild.roles, name='ban')
     await member.remove_roles(ban_role)
     cursor.execute("UPDATE users SET warns = 0 WHERE id = {} ".format(member.id))
-    cursor.execute("UPDATE users SET bans_time = 0 WHERE id = {} ".format(member.id))
+    cursor.execute("UPDATE users SET bans_time = 1 WHERE id = {} ".format(member.id))
     cursor.execute("UPDATE users SET bans = bans - 1 WHERE id = {} ".format(member.id))
     connection.commit()
 
@@ -774,6 +848,11 @@ async def unban(ctx, member: discord.Member):
 @client.command()
 @commands.has_permissions(administrator=True)
 async def mute(ctx, member: discord.Member, mute_minutes: int = None, *, arg='Не указана'):
+    mute_time: float = float(
+        gt('mute_time', member.id))
+    if mute_time > 0:
+        await ctx.send(f"{member.mention}, и так находится в муте.", delete_after=3)
+        return
     reason = arg
     if mute_minutes is None:
         await ctx.send(f"<@{ctx.author.id}>, укажите длительность мута.", delete_after=5)
@@ -802,14 +881,14 @@ async def mute(ctx, member: discord.Member, mute_minutes: int = None, *, arg='Н
     await member.add_roles(mute_role)
 
     mute_time: float = float(
-        f"""{cursor.execute("SELECT mute_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+        gt('mute_time', member.id))
     if mute_time > 0:
         while mute_time != 0:
             await asyncio.sleep(1)
             cursor.execute("UPDATE users SET mute_time = mute_time - 1 WHERE id = {} ".format(member.id))
             connection.commit()
             mute_time: float = float(
-                f"""{cursor.execute("SELECT mute_time FROM users WHERE id = {}".format(member.id)).fetchone()[0]}""")
+                gt('mute_time', member.id))
             if mute_time == 0:
                 emb = discord.Embed(title=':loud_sound: Анмут',
                                     description="{} был размучен. \n\n"
@@ -827,7 +906,7 @@ async def mute(ctx, member: discord.Member, mute_minutes: int = None, *, arg='Н
 @client.command()
 @commands.has_permissions(administrator=True)
 async def unmute(ctx, member: discord.Member):
-    cursor.execute("UPDATE users SET mute_time = 0 WHERE id = {} ".format(member.id))
+    cursor.execute("UPDATE users SET mute_time = 1 WHERE id = {} ".format(member.id))
     connection.commit()
     emb = discord.Embed(title=':loud_sound: Анмут',
                         description="{} был размучен. \n\n"
@@ -857,41 +936,41 @@ async def lesson(ctx, *, url: str = 'None'):
         await ctx.send(f"{ctx.author.mention}, указана неверная ссылка на урок.", delete_after=5)
 
 
-# Voice join
-@client.command()
-@commands.has_permissions(administrator=True)
-async def join(ctx):
-    channel = ctx.message.author.voice.channel
-    voice = get(client.voice_clients, guild=ctx.guild)
-
-    if voice and voice.is_connected() and voice.channel != channel:
-        emb = discord.Embed(description=f'{botid} перепрыгнул на канал: \n``{channel}``')
-        await ctx.send(embed=emb, delete_after=10)
-        await voice.move_to(channel)
-    else:
-        emb = discord.Embed(description=f'{botid} прыгнул на канал: \n``{channel}``')
-        await ctx.send(embed=emb, delete_after=5)
-        voice = await channel.connect()
-
-
-# Voice leave
-@client.command()
-@commands.has_permissions(administrator=True)
-async def leave(ctx):
-    channel = ctx.message.author.voice.channel
-    voice = get(client.voice_clients, guild=ctx.guild)
-
-    if voice and voice.is_connected():
-        emb = discord.Embed(description=f'{botid} ушел из канала: \n``{channel}``')
-        await ctx.send(embed=emb, delete_after=5)
-        await voice.disconnect()
+# # Voice join
+# @client.command()
+# @commands.has_permissions(administrator=True)
+# async def join(ctx):
+#     channel = ctx.message.author.voice.channel
+#     voice = get(client.voice_clients, guild=ctx.guild)
+#
+#     if voice and voice.is_connected() and voice.channel != channel:
+#         emb = discord.Embed(description=f'{botid} перепрыгнул на канал: \n``{channel}``')
+#         await ctx.send(embed=emb, delete_after=10)
+#         await voice.move_to(channel)
+#     else:
+#         emb = discord.Embed(description=f'{botid} прыгнул на канал: \n``{channel}``')
+#         await ctx.send(embed=emb, delete_after=5)
+#         voice = await channel.connect()
+#
+#
+# # Voice leave
+# @client.command()
+# @commands.has_permissions(administrator=True)
+# async def leave(ctx):
+#     channel = ctx.message.author.voice.channel
+#     voice = get(client.voice_clients, guild=ctx.guild)
+#
+#     if voice and voice.is_connected():
+#         emb = discord.Embed(description=f'{botid} ушел из канала: \n``{channel}``')
+#         await ctx.send(embed=emb, delete_after=5)
+#         await voice.disconnect()
 
 
 # Image
 @client.command()
 async def fox(ctx):
     money: float = float(
-        f"""{cursor.execute("SELECT cash FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+        gt('cash', ctx.author.id))
     if money < 200:
         await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
         return
@@ -911,7 +990,7 @@ async def fox(ctx):
 @client.command()
 async def dog(ctx):
     money: float = float(
-        f"""{cursor.execute("SELECT cash FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+        gt('cash', ctx.author.id))
     if money < 150:
         await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
         return
@@ -931,7 +1010,7 @@ async def dog(ctx):
 @client.command()
 async def cat(ctx):
     money: float = float(
-        f"""{cursor.execute("SELECT cash FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}""")
+        gt('cash', ctx.author.id))
     if money < 150:
         await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
         return
