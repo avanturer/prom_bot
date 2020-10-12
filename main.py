@@ -5,7 +5,6 @@ import requests
 import asyncio
 import datetime
 import psycopg2
-from pymysql.cursors import DictCursor
 from datetime import datetime
 from discord.ext import commands
 from discord.utils import get
