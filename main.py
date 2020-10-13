@@ -546,7 +546,7 @@ async def up(ctx):
             f"С Вас было списано **{lvlup} шестерёнок**  \n"
             f"Теперь ваш Баланс составляет **{round(cash, 1)} шестерёнок**")
     else:
-        await ctx.author.send("У вас недостаточно средств.")
+        await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.")
 
 
 # HELP
@@ -974,7 +974,7 @@ async def fox(ctx):
         await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
         return
     else:
-        cursor.execute("UPDATE users SET cash = cash - 200 WHERE id = {}".format(ctx.author.id)).fetchone()
+        cursor.execute("UPDATE users SET cash = cash - 200 WHERE id = {}".format(ctx.author.id))
         connection.commit()
         await ctx.author.send(f"С вас было списано 200 шестерёнок.\n"
                               f"Ваш текущий баланс: **{round(money - 200, 1)} шестерёнок**")
@@ -994,7 +994,7 @@ async def dog(ctx):
         await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
         return
     else:
-        cursor.execute("UPDATE users SET cash = cash - 150 WHERE id = {}".format(ctx.author.id)).fetchone()
+        cursor.execute("UPDATE users SET cash = cash - 150 WHERE id = {}".format(ctx.author.id))
         connection.commit()
         await ctx.author.send(f"С вас было списано 150 шестерёнок.\n"
                               f"Ваш текущий баланс: **{round(money - 150, 1)} шестерёнок**")
@@ -1014,7 +1014,7 @@ async def cat(ctx):
         await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
         return
     else:
-        cursor.execute("UPDATE users SET cash = cash - 150 WHERE id = {}".format(ctx.author.id)).fetchone()
+        cursor.execute("UPDATE users SET cash = cash - 150 WHERE id = {}".format(ctx.author.id))
         connection.commit()
         await ctx.author.send(f"С вас было списано 150 шестерёнок.\n"
                               f"Ваш текущий баланс: **{round(money - 150, 1)} шестерёнок**")
