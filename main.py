@@ -546,7 +546,7 @@ async def up(ctx):
             f"С Вас было списано **{lvlup} шестерёнок**  \n"
             f"Теперь ваш Баланс составляет **{round(cash, 1)} шестерёнок**")
     else:
-        await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.")
+        await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after = 3)
 
 
 # HELP
