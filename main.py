@@ -77,7 +77,8 @@ bad_words = ['6ля', '6лядь', '6лять', 'b3ъeб', 'cock', 'cunt', 'e6a�
              'хуеныш', 'хуенький', 'хуеплет', 'хуеплёт', 'хуепромышленник', 'хуерик', 'хуерыло', 'хуесос', 'хуесоска',
              'хуета', 'хуетень', 'хуею', 'хуи', 'хуй', 'хуйком', 'хуйло', 'хуйня', 'хуйрик', 'хуище', 'хуля', 'хую',
              'хуюл', 'хуя', 'хуяк', 'хуякать', 'хуякнуть', 'хуяра', 'хуясе', 'хуячить', 'целка', 'чмо', 'чмошник',
-             'чмырь', 'шалава', 'шалавой', 'шараёбиться', 'шлюха', 'шлюхой', 'шлюшка','cock','dick','penis','еба','ема','ебалай','пенис','ля','нах','бл','suck','f u']
+             'чмырь', 'шалава', 'шалавой', 'шараёбиться', 'шлюха', 'шлюхой', 'шлюшка', 'cock', 'dick', 'penis', 'еба',
+             'ема', 'ебалай', 'пенис', 'ля', 'нах', 'бл', 'suck', 'f u']
 botid = f"<@{settings['id']}>"
 SPECIAL_PREFIX = ""
 
@@ -284,18 +285,18 @@ async def on_member_join(member):
 @client.event
 async def on_voice_state_update(member, before, after):
     await private_room(member, before, after)
-    if after.channel:
-        cursor.execute(f"SELECT v_name FROM voice_data")
-        voice_name = str(cursor.fetchone()[0])
-        while after.channel:
-            if before.channel is not None:
-                if str(before.channel) != member.voice.channel:
-                    break
+    if member.voice is None:
+        return
+    last_pos = member.voice.channel
+    if after.channel is not None:
+        while last_pos == member.voice.channel:
+            if str(member.voice.channel) == "💤AFK💤":
+                break
             await asyncio.sleep(1)
             cursor.execute("UPDATE users SET cash = cash + (cashm/60) WHERE id = {} ".format(member.id))
             cursor.execute("UPDATE users SET vtime = vtime + 1 WHERE id = {} ".format(member.id))
-            vtime = gt('vtime', member.id)
             connection.commit()
+            vtime = gt('vtime', member.id)
             vtime: float = float(vtime) / 3600
             if vtime >= 1 and vtime < 50:
                 pasprot = discord.utils.get(member.guild.roles, name='Паспорт')
@@ -304,7 +305,6 @@ async def on_voice_state_update(member, before, after):
                 postol = discord.utils.get(member.guild.roles, name='Постоялец')
                 await member.remove_roles(pasprot)
                 await member.add_roles(postol)
-
 
 async def private_room(member, before, after):
     guild = member.guild
@@ -546,7 +546,7 @@ async def up(ctx):
             f"С Вас было списано **{lvlup} шестерёнок**  \n"
             f"Теперь ваш Баланс составляет **{round(cash, 1)} шестерёнок**")
     else:
-        await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after = 3)
+        await ctx.send(f"{ctx.author.mention}, у вас недостаточно средств.", delete_after=3)
 
 
 # HELP
