@@ -99,10 +99,10 @@ client = commands.Bot(command_prefix=context_prefix)
 client.remove_command('help')
 
 connection = psycopg2.connect(
-    host='ec2-34-251-118-151.eu-west-1.compute.amazonaws.com',
-    user='nmmdqfjrgykixx',
-    password='ba0c960897eb65cddaeff739205f536657b77ee28afd3a10aaa90886c7891f33',
-    dbname='ddru8hp0ktb4jb'
+    host='ec2-52-211-108-161.eu-west-1.compute.amazonaws.com',
+    user='czbnaaauynzkbu',
+    password='16c9a9930ec7f2b1216e9d0e4aac18cc4abc7bde9b74604f014934e504029427',
+    dbname='d8uqsctfr3ptck'
 )
 cursor = connection.cursor()
 
