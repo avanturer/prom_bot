@@ -292,6 +292,8 @@ async def on_voice_state_update(member, before, after):
         while last_pos == member.voice.channel:
             if str(member.voice.channel) == "💤AFK💤":
                 break
+            if member.voice.self_deaf is True:
+                break
             await asyncio.sleep(1)
             cursor.execute("UPDATE users SET cash = cash + (cashm/60) WHERE id = {} ".format(member.id))
             cursor.execute("UPDATE users SET vtime = vtime + 1 WHERE id = {} ".format(member.id))
