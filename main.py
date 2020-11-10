@@ -370,7 +370,7 @@ async def private(ctx, name_category: str = None, name_voice: str = None):
 @commands.has_permissions(administrator=True)
 async def admin_reputation(ctx, member: discord.Member, rep=1, arg='Не указана'):
     reason = arg
-    await rep_brain(ctx, member, rep, reason)
+    await rep_brain(ctx, client ,member, rep, reason)
     await ctx.send(f"Пользователю {member}, было начислено ``{rep}`` очко(-в) репутации.", delete_after=5)
 
 
@@ -379,7 +379,7 @@ async def reputation_plus(ctx, member: discord.Member, *, arg='Не указан
     if ctx.author.id == member.id or member.id == settings['id']:
         return
     reason = arg
-    await rep_brain(ctx, member, 1, reason)
+    await rep_brain(ctx,client, member, 1, reason)
     await ctx.send(f"Пользователю {member}, было начислено ``{1}`` очко репутации.", delete_after=5)
 
 
@@ -388,11 +388,11 @@ async def reputation_minus(ctx, member: discord.Member, *, arg='Не указа�
     if ctx.author.id == member.id or member.id == settings['id']:
         return
     reason = arg
-    await rep_brain(ctx, member, -1, reason)
+    await rep_brain(ctx,client, member, -1, reason)
     await ctx.send(f"Пользователю {member}, было начислено ``{-1}`` очко репутации.", delete_after=5)
 
 
-async def rep_brain(ctx, member, crep: int = None, reason=None):
+async def rep_brain(ctx,client, member, crep: int = None, reason=None):
     rep_m1000 = discord.utils.get(ctx.message.guild.roles, name='Реп: 💩')
     rep_m100_51 = discord.utils.get(ctx.message.guild.roles, name='Реп: 👺сын беса👹')
     rep_m50_26 = discord.utils.get(ctx.message.guild.roles, name='Реп: ☢️Toxic☢️')
@@ -484,6 +484,12 @@ async def rep_brain(ctx, member, crep: int = None, reason=None):
 
     await member.send(
         f"Вам было добавлено ``{crep}`` очко репутации пользователем {ctx.author.mention}.\n"
+        f"Причина: ``{reason}``.\n"
+        f"Ваша текущая репутация: ``{rep}``, ``{rep_now}``.")
+    
+    channel = client.get_channel(768193324490162236)
+    await channel.send(
+        f"{member.mention} было добавлено ``{crep}`` очко репутации пользователем {ctx.author.mention}.\n"
         f"Причина: ``{reason}``.\n"
         f"Ваша текущая репутация: ``{rep}``, ``{rep_now}``.")
 
