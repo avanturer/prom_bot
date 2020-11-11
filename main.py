@@ -94,8 +94,10 @@ def context_prefix(client, message):
         return SPECIAL_PREFIX
     return "!"
 
+intents = discord.Intents.default()
+intents.members = True
 
-client = commands.Bot(command_prefix=context_prefix)
+client = commands.Bot(command_prefix=context_prefix, intents=intents)
 client.remove_command('help')
 
 connection = psycopg2.connect(
