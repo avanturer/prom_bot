@@ -368,7 +368,7 @@ async def private(ctx, name_category: str = None, name_voice: str = None):
 
 @client.command(aliases=['arep'])
 @commands.has_permissions(administrator=True)
-async def admin_reputation(ctx, member: discord.Member, rep=1, arg='Не указана'):
+async def admin_reputation(ctx, member: discord.Member, rep=1, *, arg='Не указана'):
     reason = arg
     await rep_brain(ctx, client ,member, rep, reason)
     await ctx.send(f"Пользователю {member}, было начислено ``{rep}`` очко(-в) репутации.", delete_after=5)
