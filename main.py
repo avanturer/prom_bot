@@ -277,7 +277,7 @@ async def on_ready():
 async def on_member_join(member):
     cursor.execute(f"SELECT id FROM users WHERE id = {member.id}")
     if cursor.fetchone() is None:
-        cursor.execute(f"INSERT INTO users VALUES ('{member}','{member.id}', 1, 0, 0, 10.0, 0, 0, 0, 0, 0, 0)")
+        cursor.execute(f"INSERT INTO users VALUES ('{member}',{member.id},1,2000,0,10.0,0,0,0,0,0,0)")
         connection.commit()
     else:
         pass
