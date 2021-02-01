@@ -95,7 +95,7 @@ def context_prefix(client, message):
     return "!"
 
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.members = True
 
 client = commands.Bot(command_prefix=context_prefix, intents=intents)
@@ -151,7 +151,7 @@ async def on_ready():
             else:
                 pass
     connection.commit()
-    print('We have logged in as {0.user}'.format(client))
+
     await client.change_presence(status=discord.Status.online, activity=discord.Game('!help'))
 
     for guild in client.guilds:
@@ -966,6 +966,115 @@ async def lesson(ctx, *, url: str = 'None'):
         await ctx.send(f"{ctx.author.mention}, указана неверная ссылка на урок.", delete_after=5)
 
 
+# role pick
+@client.command()
+@commands.has_permissions(administrator=True)
+async def create_pick(ctx):
+    emb = discord.Embed(title='Выберите свою группу', color=0xbd3a1e)
+    emb.add_field(name="Варианты:",
+                  value="1.<@&805798500579147787> \n"
+                        "2.<@&805798501937709083>\n"
+                        "3.<@&805798503191674931>\n"
+                        "4.-\n"
+                        "5.<@&805798504488239181>\n")
+    emb.set_footer(text="пожалуйста выбирайте внимательно, сменить можно только через админов")
+    message = await ctx.channel.send(embed=emb)
+    emoji1 = '1️⃣'
+    emoji2 = '2️⃣'
+    emoji3 = '3️⃣'
+    emoji4 = '4️⃣'
+    emoji5 = '5️⃣'
+    await message.add_reaction(emoji1)
+    await message.add_reaction(emoji2)
+    await message.add_reaction(emoji3)
+    # await message.add_reaction(emoji4)
+    await message.add_reaction(emoji5)
+
+
+@client.command()
+@commands.has_permissions(administrator=True)
+async def create_pick2(ctx):
+    emb = discord.Embed(title='Выберите свою группу', color=0xbd3a1e)
+    emb.add_field(name="Варианты:",
+                  value="1.<@&805798745915654174> \n"
+                        "2.<@&805798747127676978>\n"
+                        "3.<@&805798748511928350>\n"
+                        "4.<@&775735560936357889>")
+    emb.set_footer(text="тут можете снимать роль без админов, но не спамьте")
+    message = await ctx.channel.send(embed=emb)
+    emoji1 = '1️⃣'
+    emoji2 = '2️⃣'
+    emoji3 = '3️⃣'
+    emoji4 = '4️⃣'
+    await message.add_reaction(emoji1)
+    await message.add_reaction(emoji2)
+    await message.add_reaction(emoji3)
+    await message.add_reaction(emoji4)
+
+
+@client.event
+async def on_raw_reaction_add(payload):
+    emoji1 = '1️⃣'
+    emoji2 = '2️⃣'
+    emoji3 = '3️⃣'
+    emoji4 = '4️⃣'
+    emoji5 = '5️⃣'
+    channel = client.get_channel(775836382761320460)
+
+    group1 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='Группа 01')
+    group2 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='Группа 02')
+    group3 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='Группа 03')
+    group5 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='Группа 05')
+
+    leader = discord.utils.get(client.get_guild(payload.guild_id).roles, name='leader👑')
+    stack1 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='fullstack')
+    stack2 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='frontend')
+    stack3 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='backend')
+
+    if payload.member.bot:
+        pass
+    else:
+        if emoji1 == payload.emoji.name and 805802520252514366 == payload.message_id:
+            await payload.member.add_roles(group1)
+        if emoji2 == payload.emoji.name and 805802520252514366 == payload.message_id:
+            await payload.member.add_roles(group2)
+        if emoji3 == payload.emoji.name and 805802520252514366 == payload.message_id:
+            await payload.member.add_roles(group3)
+        if emoji5 == payload.emoji.name and 805802520252514366 == payload.message_id:
+            await payload.member.add_roles(group5)
+
+        if emoji1 == payload.emoji.name and 805808312246730792 == payload.message_id:
+            await payload.member.add_roles(stack1)
+        if emoji2 == payload.emoji.name and 805808312246730792 == payload.message_id:
+            await payload.member.add_roles(stack2)
+        if emoji3 == payload.emoji.name and 805808312246730792 == payload.message_id:
+            await payload.member.add_roles(stack3)
+        if emoji4 == payload.emoji.name and 805808312246730792 == payload.message_id:
+            await payload.member.add_roles(leader)
+
+
+@client.event
+async def on_raw_reaction_remove(payload):
+    emoji1 = '1️⃣'
+    emoji2 = '2️⃣'
+    emoji3 = '3️⃣'
+    emoji4 = '4️⃣'
+
+    leader = discord.utils.get(client.get_guild(payload.guild_id).roles, name='leader👑')
+    stack1 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='fullstack')
+    stack2 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='frontend')
+    stack3 = discord.utils.get(client.get_guild(payload.guild_id).roles, name='backend')
+
+    if emoji1 == payload.emoji.name and 805808312246730792 == payload.message_id:
+        await client.get_guild(payload.guild_id).get_member(payload.user_id).remove_roles(stack1)
+    if emoji2 == payload.emoji.name and 805808312246730792 == payload.message_id:
+        await client.get_guild(payload.guild_id).get_member(payload.user_id).remove_roles(stack2)
+    if emoji3 == payload.emoji.name and 805808312246730792 == payload.message_id:
+        await client.get_guild(payload.guild_id).get_member(payload.user_id).remove_roles(stack3)
+    if emoji4 == payload.emoji.name and 805808312246730792 == payload.message_id:
+        await client.get_guild(payload.guild_id).get_member(payload.user_id).remove_roles(leader)
+
+
 # # Voice join
 # @client.command()
 # @commands.has_permissions(administrator=True)
@@ -1076,4 +1185,5 @@ async def on_message(message):
         await message.channel.send(f'no f u, {message.author.mention}!')
 
 
+print('We have logged in as {0.user}'.format(client))
 client.run(settings['token'])
