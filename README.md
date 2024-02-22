@@ -125,7 +125,7 @@ Clone the repository and run the bot using the provided token. Customize the cod
 ## Contributors
 
 - Rodion Orkin (avanturer)
-- 
+
 ## License
 
 This project is licensed under the [License Name] License - see the [LICENSE.md](LICENSE.md) file for details.
